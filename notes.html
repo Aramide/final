@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1"/>
+    <!--[if IE 7]><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><![endif]-->
+    <title>App4brides</title>
+    <link rel="stylesheet" href="css/jquery.mobile-1.2.0.min.css" />
+    
+    
+        <link href='http://fonts.googleapis.com/css?family=Droid+Sans:regular,bold&amp;v1' rel='stylesheet' type='text/css'/>
+    <link href="css/Site.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="css/jquery.mobile.simultaneous-transitions.css"/>
+    <script src="js/jquery-1.8.2.min.js"></script>
+    <script src="js/jquery.mobile-transition-handler-simple.js"></script>
+<script src="js/jquery.mobile.simultaneous-transitions-replace-simple.js"></script>
+
+   <script src="js/jquery.mobile-1.2.0.min.js"></script>  
+  <script>
+     
+      // Add a new todo item
+      function addTodo() {
+        var todo = document.getElementById("todo");
+        var task = {
+            "id": new Date().getTime(),
+            "text": todo.value };
+        
+        database.transaction(function(tx) {
+          tx.executeSql('INSERT INTO tasks (id, text) values (?, ?)', [task.id, task.text]);
+        });
+        // now let clean it to the next todo
+        todo.value = "";
+        showAll();
+      }
+      
+      // not efficiate way but simple for our needs
+      function showAll() {
+        document.getElementById("todoItems").innerHTML = "" ; 
+        database.transaction(function(tx) {
+          tx.executeSql('SELECT * FROM tasks', [], function (tx, results) {
+            var len = results.rows.length
+            
+            for (var i = 0; i < len; i++) {
+              var li = document.createElement("li");
+              var t = document.createTextNode(results.rows.item(i).text);
+              var a = document.createElement("a");
+              a.textContent = " [Delete]";
+              a.setAttribute('data-key', results.rows.item(i).id);
+              a.setAttribute('data-val', results.rows.item(i).text);
+
+              a.setAttribute("href", "#");
+              a.setAttribute("data-iconpos", "notext");
+              a.setAttribute("data-role", "button");
+              a.setAttribute("data-icon", "delete"); 
+              a.setAttribute("data-inline", "true");
+
+              a.addEventListener("click", function() {
+                deleteTodo(this.getAttribute("data-key"),this.getAttribute("data-val") );
+              }, false);
+              li.appendChild(a);
+              li.appendChild(t);
+              
+              document.getElementById("todoItems").appendChild(li);
+              $("#todoItems").trigger('create'); 
+            }
+          });        
+        });
+      }
+     
+     function deleteTodo(id, text) {
+        if (confirm("Are you sure you want to Delete "+ text +"?")) {
+          database.transaction(function(tx) {
+            tx.executeSql('DELETE FROM tasks WHERE id=?', [id]); 
+          });
+          showAll();
+        }
+        
+      }
+      function cleanAll() {
+        if (confirm("Are you sure you want to delete all Todos?")) {
+          database.transaction(function(tx) {
+            tx.executeSql('DROP TABLE IF EXISTS tasks', []) 
+            showAll();
+          });
+        }
+        
+      }
+      
+      function initDB() {
+        database = openDatabase('todos1', '1.0', 'todos with jqm example', 2*1024*1024);
+        if (database) {
+          database.transaction(function(tx) {
+            tx.executeSql("CREATE TABLE IF NOT EXISTS tasks (id REAL UNIQUE, text TEXT)", []);
+          });
+        }
+      }
+      
+      // start the party
+       $(document).bind('pageinit', function() {
+        console.log("-- lets start the party --");
+        initDB();
+        showAll();
+        $("#addItem").click(function() {
+          addTodo();
+        });
+        $("#cleanAll").click(function() {
+          cleanAll();
+        })
+      });
+      
+    </script></head>
+<body>
+  <div data-role="page">
+
+    <div data-role="header">
+    <div class="mvv-navbar mvv-edge-to-edge" data-role="navbar">
+                    <ul>
+                        <li><a class="ui-btn-active" data-theme="c" href="checklists.html">CHECKLISTS</a></li>
+                        <li><a class="" data-theme="c" rel="external" target="_blank" href="http://www.app4brides.com/mall/">APP4BRIDES MALL</a></li>
+                    </ul>
+                </div>
+      
+
+    </div>
+    <!-- /header -->
+
+    <div data-role="content">
+      <p>
+        This is a short example of webSQL with jQueryMobile on a todo list app. Please open Chrome DevTools and/or FireBug in order to see all the log message and understand what is the process. This example will work great on both iOS (mobile safari) and Android (Chrome for android and the Android browser).
+      </p>
+
+      <ul id="todoItems" data-role="listview" data-inset="true" data-filter="true"></ul>
+
+      <input type="text" id="todo" name="todo" placeholder="What do you need to do?"/>
+      <input id ="addItem" type="submit" value="Add Todo Item" />
+
+    </div>
+    <!-- /content -->
+    <div data-role="footer"  data-theme="c" >
+      <a href="#" data-icon="delete" id="cleanAll"  data-theme="c" >Clear All ToDo Items</a>
+ 
+     
+
+    </div>
+    <!-- /footer --> </div>
+  <!-- /page -->
+
+</body>
+</html>
